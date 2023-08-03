@@ -1,32 +1,102 @@
 from django.http.response import HttpResponse
 from django.shortcuts import render
+from django.template import loader
 import pandas as pd
 from geopy.distance import geodesic
 from math import ceil
 import requests
+from geopy.geocoders import Nominatim
+import openpyxl
+from .forms import LocationForm
+# Create a new workbook
+
+
 # Create your views here.
 params={}
+startingcity = []
 
 def index(request):
     return render(request, 'index.html')
 
+data = []
+header = ["Location", "Latitude", "Longitude","load"]
+df ={'Latitude':[],'Longitude':[],'load':[],'City':[]}
+input1 = []
+input2=[]
+def members(request):
+    
+    if request.method == 'POST':
+        # form = LocationForm(request.POST)
+        # if form.is_valid():
+            loc = request.POST['location']
+            location = str(loc) + str(", India")
+            weight = request.POST['weight'] 
+            lol =  weight +' kg'
+            input1.append(loc)
+            input1.append(lol)           
+            geolocator = Nominatim(user_agent="my_application")
+            location_data = geolocator.geocode(location)
+           
+            if location_data:
+                latitude = location_data.latitude
+                longitude = location_data.longitude
+                data.append([location, latitude, longitude,weight])
+                df['City'].append(loc)
+                df['Latitude'].append(latitude)
+                df['Longitude'].append(longitude)
+                df['load'].append(int(weight))
+                
+                
+    #             # data = {
+    #             #     'location': [location],
+    #             #     'latitude': [latitude],
+    #             #     'longitude': [longitude],
+    #             #     'weight': [weight],
+    #             # }
+                # df = pd.DataFrame(data,columns=header)
+
+                # df.to_excel('locations.xlsx', sheet_name='Sheet1', index=False, header=True)
+
+    # #             form = LocationForm()
+    # # else:
+    # #     form = LocationForm()
+    return render(request, 'index.html',)  
+    
+    
+
+
+
+
+def location_table(request):
+    
+
+    l= len(input1)
+    return render(request,'location_table.html',{'input1':input1,})
+
 def excelinput(request):
+    geolocator = Nominatim(user_agent="my_application")
     if request.method=="POST":
         capacity = int(request.POST['capacity'])
-        lat = float(request.POST['lat'])
-        long = float(request.POST['long'])
+        start = request.POST['start']
+        startingcity.append(start)
+        location_data = geolocator.geocode(start)
+        lat = float(location_data.latitude)
+        long = float(location_data.longitude)
         option = int(request.POST['format'])
-        uploaded_file=request.FILES['document']
+        
         # print(option, type(option))
         if option==1:
-            main_1(capacity,lat,long,uploaded_file)
+            main_1(capacity,lat,long)
         elif option==2:
-            main_2(capacity,lat,long,uploaded_file)
-        return render(request, 'nextpage.html', params)
+            
+            main_2(capacity,lat,long)
+
+        return render(request, 'nextpage.html', params,)
     else:
         return HttpResponse("invalid")  
 
 def clustering(capicity, df):
+    print(df)
     # df = pd.read_excel("D:\\SY CS\\EDI\\Book2.xlsx", "Sheet1")
     lat = list(df["Latitude"])
     long = list(df["Longitude"])
@@ -245,7 +315,7 @@ def route_dist_2(l):
     return dist
 
 def apiroute(c1,c2):
-    key = 'Al7q1kp7YP-UbS2gM6u7R1sXtXgnH0rWBc_s_r17qnSCndLXvHepYOouw6BmPqyO'
+    key = 'AnNAIzPx-hpHuBc6WBPvqPXm1khstAoGcqRSyTpX6EQGbX3VUimeMu5IeO7k953n'
     firstVal = "https://dev.virtualearth.net/REST/v1/Routes/DistanceMatrix?origins="
     secondVal = "&destinations="
     start = str(c1[0])+','+str(c1[1])
@@ -257,14 +327,16 @@ def apiroute(c1,c2):
     return dis
 
 
-def main_1(capacity, lat, long, uploaded_file):
+def main_1(capacity, lat, long,):
     starting_point=(lat, long)
-    df = pd.read_excel(uploaded_file, "Sheet1")
+    print(startingcity)
+    
     clusters=clustering(capacity, df)
     lat = list(df["Latitude"])
     long = list(df["Longitude"])
-    indexinexcel = {(lat[i], long[i]): (i+1) for i in range(len(lat))}
-    indexinexcel[starting_point]=0
+    City = list(df['City'])
+    indexinexcel = {(lat[i], long[i]):City[i] for i in range(len(lat))}
+    indexinexcel[starting_point]=startingcity[-1]
     urllist=[]
     total=0
     routes=[]
@@ -286,17 +358,20 @@ def main_1(capacity, lat, long, uploaded_file):
         else:
             print(i)
     params['all']=[(routes[i],urllist[i],ind_route_distance[i]) for i in range(len(urllist))]
+    print(params['all'])
     params['totaldistance']=str(total)
     print('Total route distance is :'+str(total))
 
-def main_2(capacity, lat, long, uploaded_file):
+def main_2(capacity, lat, long,):
     starting_point=(lat, long)
-    df = pd.read_excel(uploaded_file, "Sheet1")
+    print(startingcity)
+    # print(df)
     clusters=clustering(capacity, df)
     lat = list(df["Latitude"])
     long = list(df["Longitude"])
-    indexinexcel = {(lat[i], long[i]): (i+1) for i in range(len(lat))}
-    indexinexcel[starting_point]=0
+    City = list(df['City'])
+    indexinexcel = {(lat[i], long[i]):City[i] for i in range(len(lat))}    
+    indexinexcel[starting_point]= startingcity[-1]
     urllist=[]
     total=0
     routes=[]
@@ -322,17 +397,20 @@ def main_2(capacity, lat, long, uploaded_file):
     params['all']=[(routes[i],urllist[i],ind_route_distance[i]) for i in range(len(urllist))]
     params['totaldistance']=str(total)
     print('Total route distance is :'+str(total))
-
+    
 def printurl(route):
     url1="https://dev.virtualearth.net/REST/v1/Imagery/Map/Road/Routes?"
-    key = 'Al7q1kp7YP-UbS2gM6u7R1sXtXgnH0rWBc_s_r17qnSCndLXvHepYOouw6BmPqyO'
+    key = 'AnNAIzPx-hpHuBc6WBPvqPXm1khstAoGcqRSyTpX6EQGbX3VUimeMu5IeO7k953n'
     for i in range(len(route)):
+        
         url1+="wp."+str(i)+"="+str(route[i][0])+','+str(route[i][1])+';66;'+str(i+1)+'&'
     url=url1+'key='+key
+    
     return url
 
 def indexing(indexinexcel,route):
     l=""
+    
     for i in route:
         l+=str(indexinexcel[i])+" => "
     l=l[:-3]

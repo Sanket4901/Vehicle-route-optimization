@@ -11,12 +11,26 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Arizonia&display=swap" rel="stylesheet">
   <link rel="shortcut icon" href="{% static 'images/logo.png' %}" type="image/png">
-
   <title>Route Optimizer | RO</title>
 </head>
+<style>
+  button {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+
+  button:hover {
+    background-color: #3e8e41;
+  }
+</style>
 
 <body>
-  {% load static %}
+
   <div class="nav">
     <div class="img">
       <img src="{% static 'images/logo.png' %}" alt="">
@@ -33,6 +47,7 @@
 
     <div class="nav-links">
       <a href="#">HOME</a>
+      <a href="{% url 'location_table' %}">VIEW LOCATIONS</a>
       <a href="#about">ABOUT</a>
       <a href="#contact">CONTACT</a>
     </div>
@@ -46,7 +61,28 @@
       <div class="right1">
         Route Optimization
       </div>
+
       <div class="right2">
+        <form action="/members" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="form1">
+            <input type="text" id="location" name="location" required>
+            <label for="location">Location:</label>
+          </div>
+
+          <div class="form1">
+            <input type="text" id="weight" name="weight" required>
+            <label for="weight">Weight:</label>
+          </div>
+          <br>
+
+
+          <button type="submit">Add Location</button>
+          {% for i in input %}
+          <h3>{{i}}</h3>
+
+          {% endfor %}
+        </form>
         <form action="/excelinput" method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="form1">
@@ -54,13 +90,12 @@
             <label for="input1">Vehicle Capacity</label>
           </div>
           <div class="form1">
-            <input type="text" id="input1" name="lat" required>
-            <label for="input1">Starting Point Latitude</label>
+            <input type="text" id="input1" name="start" required>
+            <label for="input1">Starting City</label>
           </div>
-          <div class="form1">
-            <input type="text" id="input1" name="long" required>
-            <label for="input1">Starting Point Longitude</label>
-          </div>
+
+
+
           <div class="select">
             <select name="format" id="format" required>
               <option selected disabled>Choose a option</option>
@@ -68,11 +103,36 @@
               <option value="2">With Geographical Distance</option>
             </select>
           </div>
-          <div class="form2">
-            <input id="fileSelect" type="file" name="document" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" required>  
-          </div>
+          <!-- <div class="form2">
+            <input id="fileSelect" type="file" name="document"
+              accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
+              required>
+          </div> -->
           <button type="submit" class="button-two"><span>Submit</span></button>
         </form>
+        <div id="locations">
+          <!-- The added locations will be displayed here -->
+        </div>
+        <!-- <script>
+            // Define an array to store the added locations
+            var locations = [];
+
+            // Function to add the entered location and weight to the array
+            function addLocation() {
+              var location = document.getElementById("location").value;
+              var weight = document.getElementById("weight").value;
+              locations.push({
+                location: location,
+                weight: weight
+              });
+
+              // Display the added location on the page
+              var locationDiv = document.createElement("div");
+              locationDiv.innerHTML = location + " - " + weight + " kg";
+              document.getElementById("locations").appendChild(locationDiv);
+            }
+          </script> -->
+
       </div>
     </div>
   </div>
@@ -82,7 +142,7 @@
         Labels in Excel Sheet
       </div>
       <div class="short-photo">
-          <img src="{% static 'images/Excelformat.jpg' %}" alt="" height="100%" width="100%" style="border-radius: 50%;">
+        <img src="{% static 'images/output.jpg' %}" alt="" height="100%" width="100%" style="border-radius: 50%;">
       </div>
       <div class="short-desc">
         User should upload the excel sheet as per the label format shown in above image.
@@ -102,13 +162,15 @@
     </div>
     <div class="photo-txt">
       <div class="short-heading">
-        Geographical distance/ API 
+        Geographical distance/ API
       </div>
       <div class="short-photo">
         <img src="{% static 'images/Option.jpeg' %}" alt="" height="100%" width="100%" style="border-radius: 50%;">
       </div>
       <div class="short-desc">
-        The route generated using Geographical distance will be faster as compared to API. As the Geographical distance does not need any API request. Rather API request route will be time taking but in a sense more optimized as it is based on real route distance.
+        The route generated using Geographical distance will be faster as compared to API. As the Geographical distance
+        does not need any API request. Rather API request route will be time taking but in a sense more optimized as it
+        is based on real route distance.
       </div>
     </div>
   </div>
@@ -135,9 +197,7 @@
         </ul>
       </div>
 
-      <div class="row">
-        LOPO Copyright © 2021 LOPO - All rights reserved
-      </div>
+
     </div>
   </footer>
 </body>
